@@ -4,19 +4,22 @@ var appController = function($scope, $http, $document, $location) {
 
 	// TODO: how to form this query from the Google Maps stuff?
 	$scope.songs = [];
-	$scope.fetchSongs = function() {
+	$scope.fetchSongs = function(pathLength, elevations) {
 
-	songs = $http.get('http://developer.echonest.com/api/v4/song/search?api_key=D3MGKE6ZLQXWAKSPY&style=rock&min_danceability=0.65&min_tempo=140&results=5').
-	  success(function(data, status, headers, config) {
-	    // this callback will be called asynchronously
-	    // when the response is available
-	    console.log(data); 
-	    $scope.songs = data.response.songs;
-	  }).
-	  error(function(data, status, headers, config) {
-	    // called asynchronously if an error occurs
-	    // or server returns response with an error status.
-	  });
+    console.log(pathLength + "m");
+    console.log(elevations);
+
+   //  songs = $http.get('http://developer.echonest.com/api/v4/song/search?api_key=D3MGKE6ZLQXWAKSPY&style=rock&min_danceability=0.65&min_tempo=140&results=5').
+	  // success(function(data, status, headers, config) {
+	  //   // this callback will be called asynchronously
+	  //   // when the response is available
+	  //   console.log(data); 
+	  //   $scope.songs = data.response.songs;
+	  // }).
+	  // error(function(data, status, headers, config) {
+	  //   // called asynchronously if an error occurs
+	  //   // or server returns response with an error status.
+	  // });
 	}
 };
 app.controller('appController', appController);
@@ -27,6 +30,8 @@ var map;
 var chart;
 var polyline;
 var songs;
+var elevations;
+var pathLength;
 
 // The following path marks a general path from Mt.
 // Whitney, the highest point in the continental United
@@ -38,33 +43,78 @@ var beattyjunction = new google.maps.LatLng(36.588056, -116.943056);
 var panamintsprings = new google.maps.LatLng(36.339722, -117.467778);
 var badwater = new google.maps.LatLng(36.23998, -116.83171);
 
+var directionsDisplay;
+var directionsService = new google.maps.DirectionsService();
+var haight = new google.maps.LatLng(37.7699298, -122.4469157);
+var ucsf = "UCSF, CA";
+var ucsfAddress;
+var oceanBeach = new google.maps.LatLng(37.7683909618184, -122.51089453697205);
+
 // Load the Visualization API and the columnchart package.
 google.load('visualization', '1', {packages: ['columnchart']});
 
 function initialize() {
   var mapOptions = {
     zoom: 8,
-    center: lonepine,
+    center: haight,
     mapTypeId: 'terrain'
   }
+  directionsDisplay = new google.maps.DirectionsRenderer();
+
   map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+  directionsDisplay.setMap(map);
 
   // Create an ElevationService.
   elevator = new google.maps.ElevationService();
 
   // Draw the path, using the Visualization API and the Elevation service.
-  drawPath();
+  // drawPath();
+  getLatLong(ucsf);
+}
 
-  // Fetch the angular scope and invoke the fetch songs thingy
-  angular.element(document.getElementById('main-div')).scope().fetchSongs();
+function getLatLong(address){
+    var geo = new google.maps.Geocoder;
+
+    geo.geocode({'address':address},function(results, status){
+            if (status == google.maps.GeocoderStatus.OK) {
+              ucsfAddress = results[0].geometry.location;
+              drawPath();
+            } else {
+              alert("Geocode was not successful for the following reason: " + status);
+            }
+
+     });
 }
 
 function drawPath() {
 
+  var pathRequest = {
+      origin: haight,
+
+      destination: oceanBeach,
+
+      waypoints : [
+        {
+          location:ucsfAddress,
+          stopover:false
+        }
+      ],
+
+      // Note that Javascript allows us to access the constant
+      // using square brackets and a string value as its
+      // "property."
+      travelMode: google.maps.TravelMode["BICYCLING"]
+  };
+  directionsService.route(pathRequest, function(response, status) {
+    if (status == google.maps.DirectionsStatus.OK) {
+      directionsDisplay.setDirections(response);
+    }
+  });
+
   // Create a new chart in the elevation_chart DIV.
   chart = new google.visualization.ColumnChart(document.getElementById('elevation_chart'));
 
-  var path = [ whitney, lonepine, owenslake, panamintsprings, beattyjunction, badwater];
+  var path = [ haight, ucsfAddress, oceanBeach ];
 
   // Create a PathElevationRequest object using this array.
   // Ask for 256 samples along that path.
@@ -73,7 +123,14 @@ function drawPath() {
     'samples': 256
   }
 
+  // "Distance results are expressed in meters."
+  pathLength = google.maps.geometry.spherical.computeLength(path);
+
+
+  console.log("ask");
+
   // Initiate the path request.
+  console.log(pathRequest);
   elevator.getElevationAlongPath(pathRequest, plotElevation);
 }
 
@@ -81,9 +138,10 @@ function drawPath() {
 // and plots the elevation profile on a Visualization API ColumnChart.
 function plotElevation(results, status) {
   if (status != google.maps.ElevationStatus.OK) {
+    console.log("raw");
     return;
   }
-  var elevations = results;
+  elevations = results;
 
   // Extract the elevation samples from the returned results
   // and store them in an array of LatLngs.
@@ -119,6 +177,9 @@ function plotElevation(results, status) {
     legend: 'none',
     titleY: 'Elevation (m)'
   });
+
+  // Fetch the angular scope and invoke the fetch songs thingy
+  angular.element(document.getElementById('main-div')).scope().fetchSongs(pathLength, elevations);
 }
 
 google.maps.event.addDomListener(window, 'load', initialize);
