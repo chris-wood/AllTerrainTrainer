@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Showing elevation along a path</title>
+    <style>
+      html, body, #map-canvas {
+        height: 100%;
+        margin: 0px;
+        padding: 0px
+      }
+    </style>
+    <script src="https://www.google.com/jsapi"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+    <script src='angular.min.js'></script>
+    <script src='gmaps.ang.js'></script>
+  </head>
+  <body ng-app="gmap-app">
+    <div id="main-div" ng-controller="appController">
+      <div id="map-canvas" style="height:250px;"></div>
+      <div id="elevation_chart"></div>
+      <div id="song-container">
+        <ul>
+          <li ng-repeat="song in songs">
+            {{song}}
+          </li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>
