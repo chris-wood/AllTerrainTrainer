@@ -1,29 +1,3 @@
-// Dashboard module and controller definitions
-app = angular.module('gmap-app', []);
-var appController = function($scope, $http, $document, $location) {
-
-	// TODO: how to form this query from the Google Maps stuff?
-	$scope.songs = [];
-	$scope.fetchSongs = function(pathLength, elevations) {
-
-    console.log(pathLength + "m");
-    console.log(elevations);
-
-   //  songs = $http.get('http://developer.echonest.com/api/v4/song/search?api_key=D3MGKE6ZLQXWAKSPY&style=rock&min_danceability=0.65&min_tempo=140&results=5').
-	  // success(function(data, status, headers, config) {
-	  //   // this callback will be called asynchronously
-	  //   // when the response is available
-	  //   console.log(data); 
-	  //   $scope.songs = data.response.songs;
-	  // }).
-	  // error(function(data, status, headers, config) {
-	  //   // called asynchronously if an error occurs
-	  //   // or server returns response with an error status.
-	  // });
-	}
-};
-app.controller('appController', appController);
-
 // Google maps stuff
 var elevator;
 var map;
@@ -69,7 +43,6 @@ function initialize() {
 
   // Draw the path, using the Visualization API and the Elevation service.
   // drawPath();
-  getLatLong(ucsf);
 }
 
 function getLatLong(address){
@@ -183,3 +156,55 @@ function plotElevation(results, status) {
 }
 
 google.maps.event.addDomListener(window, 'load', initialize);
+
+// Dashboard module and controller definitions
+app = angular.module('gmap-app', []);
+var appController = function($scope, $http, $document, $location) {
+
+  // TODO: how to form this query from the Google Maps stuff?
+  $scope.songs = [];
+  $scope.fetchSongs = function(pathLength, elevations) {
+
+    console.log(pathLength + "m");
+    console.log(elevations);
+
+    songs = $http.get('http://developer.echonest.com/api/v4/song/search?api_key=D3MGKE6ZLQXWAKSPY&style=rock&min_danceability=0.65&min_tempo=140&results=5').
+    success(function(data, status, headers, config) {
+      // this callback will be called asynchronously
+      // when the response is available
+      console.log(data); 
+      $scope.songs = data.response.songs;
+    }).
+    error(function(data, status, headers, config) {
+      // called asynchronously if an error occurs
+      // or server returns response with an error status.
+    });
+  }
+
+  $scope.renderPathAndSongs = function() {
+    getLatLong(ucsf);
+  } 
+
+  // genres
+    $scope.genres = ['rock', 'hiphop', 'dubstep'];
+    
+    // selected genres
+    $scope.selection = [];
+    
+    // toggle selection for a given fruit by name
+    $scope.toggleSelection = function toggleSelection(genreName) {
+      var idx = $scope.selection.indexOf(genreName);
+      
+      // is currently selected
+      if (idx > -1) {
+        $scope.selection.splice(idx, 1);
+      }
+      
+      // is newly selected
+      else {
+        $scope.selection.push(genreName);
+      }
+    };
+
+};
+app.controller('appController', appController);
