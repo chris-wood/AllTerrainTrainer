@@ -81,30 +81,20 @@ function drawPath() {
   directionsService.route(pathRequest, function(response, status) {
     if (status == google.maps.DirectionsStatus.OK) {
       directionsDisplay.setDirections(response);
+
+      var path = response.routes[0].overview_path; // array
+      pathLength = google.maps.geometry.spherical.computeLength(path);
+      console.log("Path length: " + pathLength);
+
+      // Create a PathElevationRequest object using this array.
+      // Ask for 256 samples along that path.
+      var pathRequest = {
+        'path': path,
+        'samples': 256
+      }
+      elevator.getElevationAlongPath(pathRequest, plotElevation); 
     }
   });
-
-  // Create a new chart in the elevation_chart DIV.
-  chart = new google.visualization.ColumnChart(document.getElementById('elevation_chart'));
-
-  var path = [ haight, ucsfAddress, oceanBeach ];
-
-  // Create a PathElevationRequest object using this array.
-  // Ask for 256 samples along that path.
-  var pathRequest = {
-    'path': path,
-    'samples': 256
-  }
-
-  // "Distance results are expressed in meters."
-  pathLength = google.maps.geometry.spherical.computeLength(path);
-
-
-  console.log("ask");
-
-  // Initiate the path request.
-  console.log(pathRequest);
-  elevator.getElevationAlongPath(pathRequest, plotElevation);
 }
 
 // Takes an array of ElevationResult objects, draws the path on the map
@@ -115,6 +105,11 @@ function plotElevation(results, status) {
     return;
   }
   elevations = results;
+
+  // Create a new chart in the elevation_chart DIV.
+  chart = new google.visualization.ColumnChart(document.getElementById('elevation_chart'));
+
+  console.log("extracting elevations");
 
   // Extract the elevation samples from the returned results
   // and store them in an array of LatLngs.
